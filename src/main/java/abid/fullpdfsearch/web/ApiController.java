@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 @RestController
 public class ApiController {
 
-    public static final String SEARCH_TEMPLATE = "templates/index.html";
+    private static final String SEARCH_TEMPLATE = "templates/index.html";
 
     private final WebsiteRenderer websiteRenderer;
     private final PdfFiles pdfFiles;
@@ -50,14 +50,12 @@ public class ApiController {
     }
 
     @GetMapping("/search")
-    public String greeting(@RequestParam(value = "query", defaultValue = "") String query) throws IOException, ParseException {
+    public String search(@RequestParam(value = "query", defaultValue = "") String query) throws IOException, ParseException {
         Directory memoryIndex = new RAMDirectory();
         StandardAnalyzer analyzer = new StandardAnalyzer();
         IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
         IndexWriter writer = new IndexWriter(memoryIndex, indexWriterConfig);
-
-        final List<Path> paths = pdfFiles.getFiles();
-        for(Path path : paths) {
+        for (Path path : pdfFiles.getFiles()) {
             final String file = path.toFile().getName();
             System.out.println("Processing: " + file);
             Document document = new Document();
@@ -65,7 +63,6 @@ public class ApiController {
             document.add(new TextField("text", pdfReader.read(path.toFile()), Field.Store.YES));
             writer.addDocument(document);
         }
-
         writer.close();
 
         List<Document> documents = searchIndex(analyzer, memoryIndex, "text", query);
@@ -76,11 +73,9 @@ public class ApiController {
             return new SearchResult(filename, text);
         }).collect(Collectors.toList());
 
-
         Map<String, Object> data = new HashMap<>();
         data.put("query", query);
         data.put("results", results);
-
         return websiteRenderer.render(SEARCH_TEMPLATE, data);
     }
 
