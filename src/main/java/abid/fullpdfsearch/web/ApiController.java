@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 public class ApiController {
@@ -65,13 +64,7 @@ public class ApiController {
         }
         writer.close();
 
-        List<Document> documents = searchIndex(analyzer, memoryIndex, "text", query);
-
-        List<SearchResult> results = documents.stream().map(document -> {
-            String filename = document.get("file");
-            String text = document.get("text");
-            return new SearchResult(filename, text);
-        }).collect(Collectors.toList());
+        List<SearchResult> results = searchIndex(analyzer, memoryIndex, "text", query);
 
         Map<String, Object> data = new HashMap<>();
         data.put("query", query);
@@ -79,19 +72,22 @@ public class ApiController {
         return websiteRenderer.render(SEARCH_TEMPLATE, data);
     }
 
-    public List<Document> searchIndex(StandardAnalyzer analyzer, Directory memoryIndex, String inField, String queryString) throws ParseException, IOException {
+    public List<SearchResult> searchIndex(StandardAnalyzer analyzer, Directory memoryIndex, String inField, String queryString) throws ParseException, IOException {
         Query query = new QueryParser(inField, analyzer)
                 .parse(queryString);
 
         IndexReader indexReader = DirectoryReader.open(memoryIndex);
         IndexSearcher searcher = new IndexSearcher(indexReader);
         TopDocs topDocs = searcher.search(query, 10);
-        List<Document> documents = new ArrayList<>();
-        for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
-            documents.add(searcher.doc(scoreDoc.doc));
-        }
 
-        return documents;
+        List<SearchResult> results = new ArrayList<>();
+        for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
+            final Document doc = searcher.doc(scoreDoc.doc);
+            String filename = doc.get("file");
+            String text = doc.get("text");
+            results.add(new SearchResult(filename, scoreDoc.score, text));
+        }
+        return results;
     }
 
 }
