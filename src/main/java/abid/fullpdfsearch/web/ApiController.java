@@ -2,14 +2,13 @@ package abid.fullpdfsearch.web;
 
 import abid.fullpdfsearch.model.SearchResult;
 import abid.fullpdfsearch.service.PdfFiles;
-import abid.fullpdfsearch.service.PdfReader;
+import abid.fullpdfsearch.service.PdfTextExtractor;
 import abid.fullpdfsearch.service.WebsiteRenderer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -36,35 +35,26 @@ import java.util.Map;
 public class ApiController {
 
     private static final String SEARCH_TEMPLATE = "templates/index.html";
+    private static final String INDEX_PARAM_FILE = "file";
+    private static final String INDEX_PARAM_TEXT = "text";
 
     private final WebsiteRenderer websiteRenderer;
     private final PdfFiles pdfFiles;
-    private final PdfReader pdfReader;
+    private final PdfTextExtractor extractor;
 
     @Autowired
-    public ApiController(WebsiteRenderer websiteRenderer, PdfFiles pdfFiles, PdfReader pdfReader) {
+    public ApiController(WebsiteRenderer websiteRenderer, PdfFiles pdfFiles, PdfTextExtractor extractor) {
         this.websiteRenderer = websiteRenderer;
         this.pdfFiles = pdfFiles;
-        this.pdfReader = pdfReader;
+        this.extractor = extractor;
     }
 
     @GetMapping("/search")
     public String search(@RequestParam(value = "query", defaultValue = "") String query) throws IOException, ParseException {
-        Directory memoryIndex = new RAMDirectory();
-        StandardAnalyzer analyzer = new StandardAnalyzer();
-        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(analyzer);
-        IndexWriter writer = new IndexWriter(memoryIndex, indexWriterConfig);
-        for (Path path : pdfFiles.getFiles()) {
-            final String file = path.toFile().getName();
-            System.out.println("Processing: " + file);
-            Document document = new Document();
-            document.add(new TextField("file", file, Field.Store.YES));
-            document.add(new TextField("text", pdfReader.read(path.toFile()), Field.Store.YES));
-            writer.addDocument(document);
-        }
-        writer.close();
+        final StandardAnalyzer analyzer = new StandardAnalyzer();
+        final Directory index = createIndex(analyzer);
 
-        List<SearchResult> results = searchIndex(analyzer, memoryIndex, "text", query);
+        List<SearchResult> results = searchIndex(analyzer, index, INDEX_PARAM_TEXT, query);
 
         Map<String, Object> data = new HashMap<>();
         data.put("query", query);
@@ -72,22 +62,32 @@ public class ApiController {
         return websiteRenderer.render(SEARCH_TEMPLATE, data);
     }
 
-    public List<SearchResult> searchIndex(StandardAnalyzer analyzer, Directory memoryIndex, String inField, String queryString) throws ParseException, IOException {
-        Query query = new QueryParser(inField, analyzer)
-                .parse(queryString);
+    private Directory createIndex(StandardAnalyzer analyzer) throws IOException {
+        final Directory memoryIndex = new RAMDirectory();
+        try (IndexWriter writer = new IndexWriter(memoryIndex, new IndexWriterConfig(analyzer))) {
+            for (Path path : pdfFiles.getFiles()) {
+                System.out.println("Processing: " + path);
+                final Document document = new Document();
+                document.add(new TextField(INDEX_PARAM_FILE, path.toFile().getName(), Field.Store.YES));
+                document.add(new TextField(INDEX_PARAM_TEXT, extractor.extract(path.toFile()), Field.Store.YES));
+                writer.addDocument(document);
+            }
+        }
+        return memoryIndex;
+    }
 
-        IndexReader indexReader = DirectoryReader.open(memoryIndex);
-        IndexSearcher searcher = new IndexSearcher(indexReader);
-        TopDocs topDocs = searcher.search(query, 10);
+    private List<SearchResult> searchIndex(StandardAnalyzer analyzer, Directory memoryIndex, String field, String queryString) throws ParseException, IOException {
+        final IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(memoryIndex));
+        final Query query = new QueryParser(field, analyzer).parse(queryString);
+        final TopDocs topDocs = searcher.search(query, 10);
 
         List<SearchResult> results = new ArrayList<>();
         for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
-            final Document doc = searcher.doc(scoreDoc.doc);
-            String filename = doc.get("file");
-            String text = doc.get("text");
+            Document doc = searcher.doc(scoreDoc.doc);
+            String filename = doc.get(INDEX_PARAM_FILE);
+            String text = doc.get(INDEX_PARAM_TEXT);
             results.add(new SearchResult(filename, scoreDoc.score, text));
         }
         return results;
     }
-
 }

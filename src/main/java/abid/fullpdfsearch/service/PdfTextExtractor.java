@@ -8,9 +8,9 @@ import java.io.File;
 import java.io.IOException;
 
 @Component
-public class PdfReader {
+public class PdfTextExtractor {
 
-    public String read(File file) {
+    public String extract(File file) {
         try (PDDocument document = PDDocument.load(file)) {
             final PDFTextStripper textStripper = new PDFTextStripper();
             final String text = textStripper.getText(document);
