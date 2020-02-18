@@ -1,0 +1,41 @@
+plugins {
+	id 'org.springframework.boot' version '2.2.4.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+	id 'java'
+}
+
+group = 'abid.fullpdfsearch'
+version = '0.0.1-SNAPSHOT'
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+
+repositories {
+	mavenCentral()
+}
+
+wrapper {
+	gradleVersion = '6.1'
+	distributionType = Wrapper.DistributionType.ALL
+}
+
+dependencies {
+	implementation (
+			'org.springframework.boot:spring-boot-starter-web',
+			"io.pebbletemplates:pebble:3.1.2",
+			"org.apache.pdfbox:pdfbox:2.0.18",
+			"org.apache.lucene:lucene-core:8.4.1",
+			"org.apache.lucene:lucene-queryparser:8.4.1",
+	)
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+}
+
+test {
+	useJUnitPlatform()
+}
+
+bootRun {
+	// Lets you pick Spring Boot profile by system properties e.g. ./gradlew bootRun -Dspring.profiles.active=dev
+	systemProperties System.properties
+}

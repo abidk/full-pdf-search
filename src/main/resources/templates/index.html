@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Full PDF Search</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <style>
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+    </style>
+</head>
+<body>
+<div class="container">
+    <p>Query = {{query}}</p>
+    <div>
+        <p>Results:</p>
+        <ul>
+        {% for result in results %}
+            <li>
+                <p>Filename: {{result.filename}}</p>
+                <p class="truncate">{{result.text}}</p>
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+</div>
+</body>
+</html>
