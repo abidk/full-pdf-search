@@ -2,14 +2,14 @@ package abid.fullpdfsearch.service;
 
 import com.mitchellbosecke.pebble.PebbleEngine;
 import com.mitchellbosecke.pebble.template.PebbleTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 
-@Component
+@Service
 public class WebsiteRenderer {
 
     public String render(String template, Map<String, Object> data) {

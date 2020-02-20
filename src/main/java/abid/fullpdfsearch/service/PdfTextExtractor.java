@@ -2,12 +2,12 @@ package abid.fullpdfsearch.service;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
 
-@Component
+@Service
 public class PdfTextExtractor {
 
     public String extract(File file) {
