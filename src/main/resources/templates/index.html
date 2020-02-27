@@ -23,8 +23,13 @@
             {% for result in results %}
             <li>
                 <p>Filename: {{result.filename}}</p>
-                <p>Score: {{result.score}}</p>
-                <p class="truncate">{{result.text}}</p>
+                <p class="truncate">Text: {{result.text}}</p>
+                <p>Fragments:</p>
+                <ol>
+                    {% for fragment in result.fragments %}
+                    <li>{{fragment}}</li>
+                    {% endfor %}
+                </ol>
             </li>
             {% endfor %}
         </ul>

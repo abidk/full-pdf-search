@@ -19,12 +19,16 @@ wrapper {
 }
 
 dependencies {
+	ext {
+		luceneVersion = "8.4.1"
+	}
 	implementation (
 			'org.springframework.boot:spring-boot-starter-web',
 			"io.pebbletemplates:pebble:3.1.2",
 			"org.apache.pdfbox:pdfbox:2.0.18",
-			"org.apache.lucene:lucene-core:8.4.1",
-			"org.apache.lucene:lucene-queryparser:8.4.1",
+			"org.apache.lucene:lucene-core:$luceneVersion",
+			"org.apache.lucene:lucene-queryparser:$luceneVersion",
+			"org.apache.lucene:lucene-highlighter:$luceneVersion"
 	)
 	testImplementation('org.springframework.boot:spring-boot-starter-test') {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
